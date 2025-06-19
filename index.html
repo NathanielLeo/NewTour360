@@ -1,0 +1,767 @@
+<!DOCTYPE html>
+<html lang="vi">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Tour 360 Đa Cảnh với Pannellum</title>
+    <!-- Tải Pannellum từ CDN -->
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/pannellum@2.5.6/build/pannellum.css"
+    />
+    <link
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css"
+      rel="stylesheet"
+    />
+    <script src="https://cdn.jsdelivr.net/npm/pannellum@2.5.6/build/pannellum.js"></script>
+    <!-- Google API & Picker -->
+    <script
+      type="text/javascript"
+      src="https://apis.google.com/js/api.js"
+    ></script>
+    <script
+      type="text/javascript"
+      src="https://accounts.google.com/gsi/client"
+      async
+      defer
+    ></script>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        margin: 0;
+        padding: 0;
+        background-color: #f4f4f4;
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      .container {
+        max-width: 1100px;
+        width: 100%;
+        padding: 20px;
+        text-align: center;
+        margin: auto;
+      }
+      h1 {
+        color: #f5b50a;
+        margin-bottom: 20px;
+      }
+      .main-flex {
+        display: flex;
+        flex-direction: row;
+        gap: 32px;
+        width: 100%;
+        align-items: flex-start;
+        justify-content: center;
+      }
+      .left-panel {
+        flex: 0 0 380px;
+        max-width: 420px;
+        width: 100%;
+        display: flex;
+        flex-direction: column;
+        gap: 18px;
+      }
+      .right-panel {
+        flex: 1 1 0;
+        min-width: 0;
+        width: 100%;
+        display: flex;
+        flex-direction: column;
+        align-items: stretch;
+      }
+      .form-container {
+        background-color: #fff;
+        padding: 20px;
+        border-radius: 8px;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        margin-bottom: 0;
+      }
+      .upload-section {
+        background: rgba(255, 255, 255, 0.05);
+        border: 2px dashed rgba(0, 0, 0, 0.1);
+        border-radius: 12px;
+        padding: 40px;
+        text-align: center;
+        margin-bottom: 20px;
+      }
+      .upload-icon i {
+        font-size: 60px;
+        color: #808080ba;
+        padding-bottom: 20px;
+      }
+      .upload-text {
+        font-size: 16px;
+        margin-bottom: 8px;
+        color: gray;
+      }
+      .upload-subtext {
+        font-size: 12px;
+        opacity: 0.6;
+        color: gray;
+      }
+      #uploadForm {
+        margin-top: 20px;
+      }
+      #panorama {
+        display: none;
+      }
+      .upload-buttons {
+        display: flex;
+        gap: 15px;
+        justify-content: center;
+        width: 300px;
+      }
+      .btn-secondary {
+        background: transparent;
+        border: 1px solid rgb(245, 181, 10, 0.5);
+        color: gray;
+        padding: 10px 5px;
+        border-radius: 8px;
+        cursor: pointer;
+        font-size: 14px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        transition: background 0.3s, color 0.3s;
+      }
+      .btn-secondary[type="submit"] {
+        background: linear-gradient(45deg, #8b5cf6, #a855f7);
+        border: none;
+        color: white;
+        font-weight: 600;
+        max-width: 100px;
+        margin: 0 auto;
+        justify-content: center;
+      }
+      .btn-secondary:hover {
+        background: rgba(139, 92, 246, 0.1);
+        color: #8b5cf6;
+      }
+      .image-list {
+        margin: 20px 0 0 0;
+        text-align: left;
+      }
+      .image-list ul {
+        list-style: none;
+        padding: 0;
+      }
+      .image-list li {
+        background-color: #fff;
+        padding: 10px;
+        margin: 5px 0;
+        border-radius: 4px;
+        box-shadow: 0 1px 5px rgba(0, 0, 0, 0.1);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+      .image-list h3 {
+        color: #f5b50a;
+      }
+      .image-list button {
+        background-color: #f5b50a;
+        padding: 5px 10px;
+        font-size: 14px;
+        border: none;
+        border-radius: 4px;
+        color: #fff;
+        cursor: pointer;
+        transition: background 0.3s;
+      }
+      .image-list button:hover {
+        background-color: #f5b50a;
+      }
+      .right-panel #viewer {
+        width: 100%;
+        height: 500px;
+        border-radius: 8px;
+        overflow: hidden;
+        display: none;
+      }
+      .right-panel #viewer.active {
+        display: block;
+      }
+      /* Responsive */
+      @media (max-width: 900px) {
+        .main-flex {
+          flex-direction: column;
+          gap: 0;
+        }
+        .left-panel,
+        .right-panel {
+          max-width: 100%;
+          width: 100%;
+        }
+        .right-panel {
+          margin-top: 24px;
+        }
+      }
+      .modal-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.4);
+        display: none;
+        align-items: center;
+        justify-content: center;
+        z-index: 1000;
+      }
+      .modal {
+        background: #fff;
+        border-radius: 10px;
+        padding: 32px 24px 24px 24px;
+        max-width: 350px;
+        box-shadow: 0 4px 24px rgba(0, 0, 0, 0.18);
+        text-align: center;
+      }
+      .modal h4,
+      h2 {
+        color: #c00;
+        margin-bottom: 12px;
+      }
+      .modal p {
+        color: #333;
+        margin-bottom: 18px;
+      }
+      .modal .modal-actions {
+        display: flex;
+        gap: 16px;
+        justify-content: center;
+      }
+      .modal .modal-btn {
+        padding: 8px 18px;
+        border-radius: 6px;
+        border: none;
+        font-size: 15px;
+        cursor: pointer;
+      }
+      .modal .modal-btn.confirm {
+        background: #007bff;
+        color: #fff;
+      }
+      .modal .modal-btn.cancel {
+        background: #eee;
+        color: #333;
+      }
+      /* đăng xuất  */
+      .logout-btn {
+        position: fixed;
+        top: 1rem;
+        left: 1rem;
+        padding: 0.5rem 1rem;
+        background: #dc3545;
+        color: white;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        text-decoration: none;
+      }
+
+      .logout-btn:hover {
+        background: #c82333;
+      }
+      #selectedFiles {
+        margin-top: 8px;
+        text-align: center;
+        font-size: 12px;
+        color: #8b5cf6;
+        display: flex;
+        flex-direction: row;
+        justify-content: center;
+        gap: 6px;
+        flex-wrap: wrap;
+      }
+      #selectedFiles div {
+        background: #f3f0ff;
+        border-radius: 12px;
+        padding: 3px 10px;
+        font-size: 12px;
+        color: #8b5cf6;
+        margin: 2px 0;
+        display: inline-block;
+        box-shadow: 0 1px 3px rgba(139, 92, 246, 0.08);
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h1>Tạo Tour 360 Đa Cảnh</h1>
+      <div class="main-flex">
+        <div class="left-panel">
+          <div class="form-container">
+            <div class="upload-section">
+              <div class="upload-icon">
+                <i class="fa-solid fa-image fa-3x"></i>
+              </div>
+              <div class="upload-text">Kéo thả hoặc chọn ảnh 360</div>
+              <div class="upload-subtext">
+                Định dạng JPG, PNG & dung lượng tối đa 10 MB
+              </div>
+              <form id="uploadForm">
+                <input type="file" id="panorama" accept="image/*" multiple />
+                <div class="upload-buttons">
+                  <button
+                    type="button"
+                    class="btn-secondary"
+                    onclick="document.getElementById('panorama').click();"
+                  >
+                    <i class="fa-solid fa-arrow-up-from-bracket"></i> Tải lên
+                  </button>
+                  <button
+                    type="button"
+                    class="btn-secondary"
+                    id="addFromDriveBtn"
+                  >
+                    <i class="fab fa-google-drive"></i> Google Drive
+                  </button>
+                </div>
+                <div style="margin-top: 12px; text-align: center">
+                  <button
+                    type="submit"
+                    class="btn-secondary"
+                    style="width: 100%"
+                  >
+                    Tạo Tour
+                  </button>
+                </div>
+              </form>
+              <p class="upload-subtext" style="margin-top: 10px">
+                Hoặc kéo thả file vào khu vực này.
+              </p>
+              <div
+                id="selectedFiles"
+                style="
+                  margin-top: 8px;
+                  text-align: left;
+                  font-size: 13px;
+                  color: #8b5cf6;
+                "
+              ></div>
+            </div>
+          </div>
+
+          <div class="image-list">
+            <h3>Danh sách tải lên</h3>
+            <ul id="imageList"></ul>
+          </div>
+        </div>
+        <div class="right-panel">
+          <div id="viewer"></div>
+        </div>
+      </div>
+      <div class="modal-overlay" id="modalOverlay">
+        <div class="modal">
+          <h2>Lưu ý</h2>
+          <h4>Đây không phải ảnh 360</h4>
+          <p>
+            Ảnh bạn chọn không phải panorama 360, nếu xem sẽ bị lỗi hình. Bạn
+            vẫn muốn thêm ảnh này?
+          </p>
+          <div class="modal-actions">
+            <button class="modal-btn confirm" id="modalConfirm">
+              Chập nhận
+            </button>
+            <button class="modal-btn cancel" id="modalCancel">Cancel</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      const viewerContainer = document.getElementById("viewer");
+      const imageList = document.getElementById("imageList");
+      let panorama = null;
+      let images = [];
+      let pendingFiles = [];
+      let pendingIndex = 0;
+
+      // Google Drive Picker API integration
+      // You must replace the below with your own credentials from Google Cloud Console
+      const GOOGLE_CLIENT_ID =
+        "814268602064-fg8v1i69lts85si1h1g3364ji1p85q4q.apps.googleusercontent.com"; // <-- Thay bằng client_id thật
+      const GOOGLE_API_KEY = "AIzaSyBlkYHO7b7dnK8Zig6dJ_YWDNlPJvxOHF4"; // <-- Thay bằng apiKey thật
+      const GOOGLE_APP_ID = "814268602064"; // <-- Thay bằng appId thật
+      const GOOGLE_SCOPES = ["https://www.googleapis.com/auth/drive.readonly"];
+      let oauthToken;
+
+      function onApiLoad() {
+        gapi.load("picker", {});
+      }
+
+      let tokenClient;
+      function onAuthApiLoad(callback) {
+        if (!tokenClient) {
+          tokenClient = google.accounts.oauth2.initTokenClient({
+            client_id: GOOGLE_CLIENT_ID,
+            scope: GOOGLE_SCOPES.join(" "),
+            callback: (tokenResponse) => {
+              oauthToken = tokenResponse.access_token;
+              callback();
+            },
+          });
+        }
+        tokenClient.requestAccessToken();
+      }
+
+      function createPicker() {
+        if (oauthToken) {
+          const picker = new google.picker.PickerBuilder()
+            .addView(google.picker.ViewId.DOCS_IMAGES)
+            .setOAuthToken(oauthToken)
+            .setDeveloperKey(GOOGLE_API_KEY)
+            .setAppId(GOOGLE_APP_ID)
+            .setCallback(pickerCallback)
+            .build();
+          picker.setVisible(true);
+        } else {
+          onAuthApiLoad(createPicker);
+        }
+      }
+
+      function pickerCallback(data) {
+        if (data.action === google.picker.Action.PICKED) {
+          const file = data.docs[0];
+          const fileId = file.id;
+          const fileName = file.name;
+          if (!oauthToken) {
+            alert("Không có token xác thực Google Drive!");
+            return;
+          }
+          // Sử dụng Google Drive API để lấy blob ảnh với header hợp lệ
+          fetch(`https://www.googleapis.com/drive/v3/files/${fileId}?alt=media`, {
+            headers: {
+              Authorization: `Bearer ${oauthToken}`,
+            },
+          })
+            .then((response) => {
+              if (!response.ok) throw new Error("Không thể tải ảnh từ Google Drive!");
+              return response.blob();
+            })
+            .then((blob) => {
+              const ext = fileName.split('.').pop();
+              const mimeType = blob.type || (ext === 'png' ? 'image/png' : 'image/jpeg');
+              const imageFile = new File([blob], fileName, { type: mimeType });
+              isPanorama360(imageFile, function (isPano) {
+                if (isPano) {
+                  addImage(imageFile);
+                } else {
+                  showModal(
+                    function () {
+                      addImage(imageFile);
+                    },
+                    function () {}
+                  );
+                }
+              });
+            })
+            .catch((err) => {
+              alert("Không thể tải ảnh từ Google Drive. Vui lòng thử lại!");
+            });
+        }
+      }
+
+      document.addEventListener("DOMContentLoaded", function () {
+        const addFromDriveBtn = document.getElementById("addFromDriveBtn");
+        if (addFromDriveBtn) {
+          addFromDriveBtn.addEventListener("click", function () {
+            // Load Picker API if not loaded
+            if (typeof gapi === "undefined" || typeof google === "undefined") {
+              alert("Google API chưa sẵn sàng. Vui lòng thử lại sau.");
+              return;
+            }
+            if (
+              !GOOGLE_CLIENT_ID ||
+              !GOOGLE_API_KEY ||
+              !GOOGLE_APP_ID ||
+              GOOGLE_CLIENT_ID.includes("YOUR_CLIENT_ID")
+            ) {
+              alert(
+                "Bạn cần cấu hình GOOGLE_CLIENT_ID, GOOGLE_API_KEY, GOOGLE_APP_ID trong mã nguồn."
+              );
+              return;
+            }
+            onApiLoad();
+            createPicker();
+          });
+        }
+      });
+
+      // Drag-and-drop upload
+      const uploadSection = document.querySelector(".upload-section");
+      const fileInput = document.getElementById("panorama");
+      const selectedFilesDiv = document.getElementById("selectedFiles");
+      uploadSection.addEventListener("dragover", function (e) {
+        e.preventDefault();
+        e.stopPropagation();
+        uploadSection.style.borderColor = "#8b5cf6";
+        uploadSection.style.background = "rgba(139,92,246,0.08)";
+      });
+      uploadSection.addEventListener("dragleave", function (e) {
+        e.preventDefault();
+        e.stopPropagation();
+        uploadSection.style.borderColor = "rgba(0, 0, 0, 0.1)";
+        uploadSection.style.background = "rgba(255,255,255,0.05)";
+      });
+      uploadSection.addEventListener("drop", function (e) {
+        e.preventDefault();
+        e.stopPropagation();
+        uploadSection.style.borderColor = "rgba(0, 0, 0, 0.1)";
+        uploadSection.style.background = "rgba(255,255,255,0.05)";
+        const files = Array.from(e.dataTransfer.files).filter((f) =>
+          f.type.startsWith("image/")
+        );
+        if (files.length === 0) {
+          alert("Vui lòng th��� file ảnh hợp lệ!");
+          return;
+        }
+        // Đưa file vào input và xử lý như submit form
+        fileInput.files = createFileList(files);
+        updateSelectedFiles(files);
+        document
+          .getElementById("uploadForm")
+          .dispatchEvent(new Event("submit"));
+      });
+      // Helper: Tạo FileList từ mảng File
+      function createFileList(files) {
+        const dataTransfer = new DataTransfer();
+        files.forEach((f) => dataTransfer.items.add(f));
+        return dataTransfer.files;
+      }
+      // Hiện tên file vừa chọn
+      fileInput.addEventListener("change", function () {
+        updateSelectedFiles(Array.from(fileInput.files));
+      });
+      function updateSelectedFiles(files) {
+        if (!files || files.length === 0) {
+          selectedFilesDiv.innerHTML = "";
+          return;
+        }
+        selectedFilesDiv.innerHTML = files
+          .map((f) => `<div>🖼️ ${f.name}</div>`)
+          .join("");
+      }
+
+      // Hiện modal cảnh báo ảnh không phải panorama 360
+      function showModal(confirmCallback, cancelCallback) {
+        const overlay = document.getElementById("modalOverlay");
+        overlay.style.display = "flex";
+        document.getElementById("modalConfirm").onclick = function () {
+          overlay.style.display = "none";
+          confirmCallback();
+        };
+        document.getElementById("modalCancel").onclick = function () {
+          overlay.style.display = "none";
+          if (cancelCallback) cancelCallback();
+        };
+      }
+
+      // Kiểm tra ảnh có phải panorama 360 không (tỉ lệ width/height > 1.8)
+      function isPanorama360(img, callback) {
+        const image = new window.Image();
+        image.onload = function () {
+          const ratio = image.width / image.height;
+          callback(ratio > 1.8);
+        };
+        image.onerror = function () {
+          callback(false);
+        };
+        image.src = URL.createObjectURL(img);
+      }
+
+      // Xử lý form thêm ảnh
+      document.getElementById("uploadForm").addEventListener("submit", (e) => {
+        e.preventDefault();
+        const fileInput = document.getElementById("panorama");
+        const files = Array.from(fileInput.files);
+        if (files.length === 0) {
+          alert("Vui lòng thêm ít nhất một hình ảnh!");
+          return;
+        }
+        pendingFiles = files;
+        pendingIndex = 0;
+        handleNextFile();
+      });
+
+      function handleNextFile() {
+        if (pendingIndex >= pendingFiles.length) {
+          document.getElementById("panorama").value = "";
+          selectedFilesDiv.innerHTML = "";
+          return;
+        }
+        const file = pendingFiles[pendingIndex];
+        isPanorama360(file, function (isPano) {
+          if (isPano) {
+            addImage(file);
+            pendingIndex++;
+            handleNextFile();
+          } else {
+            showModal(
+              function () {
+                addImage(file);
+                pendingIndex++;
+                handleNextFile();
+              },
+              function () {
+                pendingIndex++;
+                handleNextFile();
+              }
+            );
+          }
+        });
+      }
+
+      function addImage(file) {
+        const imageUrl = URL.createObjectURL(file);
+        images.push({ name: file.name, url: imageUrl });
+        updateImageList();
+        autoStartTour();
+      }
+
+      // Cập nhật danh sách ảnh
+      function updateImageList() {
+        imageList.innerHTML = "";
+        images.forEach((image, index) => {
+          const li = document.createElement("li");
+          li.innerHTML = `
+            <span>${image.name}</span>
+            <div style="display: flex; gap: 8px;">
+              <button onclick="viewSingleImage(${index})">Xem</button>
+              <button class="btn-delete" style="background:#e53935;" onclick="deleteImageConfirm(${index})">Xóa</button>
+            </div>
+          `;
+          imageList.appendChild(li);
+        });
+      }
+
+      // Xác nhận xóa ảnh
+      window.deleteImageConfirm = function (index) {
+        const overlay = document.getElementById("modalOverlay");
+        overlay.querySelector("h2").textContent = "Xác nhận";
+        overlay.querySelector("h4").textContent = "Bạn có muốn xóa ảnh này?";
+        overlay.querySelector(
+          ".modal p"
+        ).textContent = `Ảnh: ${images[index].name}`;
+        overlay.querySelector("#modalConfirm").style.display = "";
+        showModal(
+          function () {
+            images.splice(index, 1);
+            updateImageList();
+            if (
+              images.length === 0 &&
+              viewerContainer.classList.contains("active")
+            ) {
+              viewerContainer.classList.remove("active");
+            }
+            autoStartTour();
+          },
+          function () {}
+        );
+      };
+
+      // Xem ảnh đơn lẻ
+      window.viewSingleImage = function (index) {
+        if (panorama) {
+          panorama.destroy();
+        }
+        panorama = pannellum.viewer("viewer", {
+          type: "equirectangular",
+          panorama: images[index].url,
+          autoLoad: true,
+          showControls: true,
+          showFullscreenCtrl: true,
+          showZoomCtrl: true,
+          compass: true,
+          title: `Ảnh: ${images[index].name}`,
+          author: "Người dùng",
+          mouseZoom: true,
+          draggable: true,
+        });
+        viewerContainer.classList.add("active");
+      };
+
+      // Tự động khởi tạo tour đa cảnh khi có ảnh mới
+      function autoStartTour() {
+        if (panorama) {
+          panorama.destroy();
+        }
+        if (images.length === 0) {
+          viewerContainer.classList.remove("active");
+          return;
+        }
+        // Tạo cấu hình tour đa cảnh
+        const scenes = {};
+        images.forEach((image, index) => {
+          scenes[`scene-${index}`] = {
+            type: "equirectangular",
+            panorama: image.url,
+            title: `Cảnh: ${image.name}`,
+            author: "Người dùng",
+            compass: true,
+            hotSpots: [],
+          };
+          // Thêm hotspot để chuyển đến cảnh kế tiếp và trước đó
+          if (images.length > 1) {
+            const nextIndex = (index + 1) % images.length;
+            const prevIndex = (index - 1 + images.length) % images.length;
+            scenes[`scene-${index}`].hotSpots.push({
+              pitch: 0,
+              yaw: 90,
+              type: "scene",
+              text: `Đi đến ${images[nextIndex].name}`,
+              sceneId: `scene-${nextIndex}`,
+            });
+            scenes[`scene-${index}`].hotSpots.push({
+              pitch: 0,
+              yaw: -90,
+              type: "scene",
+              text: `Đi đến ${images[prevIndex].name}`,
+              sceneId: `scene-${prevIndex}`,
+            });
+          }
+        });
+        // Khởi tạo Pannellum với tour đa cảnh
+        panorama = pannellum.viewer("viewer", {
+          default: {
+            firstScene: "scene-0",
+            autoLoad: true,
+            showControls: true,
+            showFullscreenCtrl: true,
+            showZoomCtrl: true,
+            compass: true,
+            mouseZoom: true,
+            draggable: true,
+          },
+          scenes: scenes,
+        });
+        viewerContainer.classList.add("active");
+      }
+
+      // //đăng nhập bảo mật
+      // (function () {
+      //   // Kiểm tra xác thực
+      //   const folderName = window.location.pathname
+      //     .split("/")
+      //     .filter((p) => p)
+      //     .slice(-2)[0];
+      //   if (!localStorage.getItem(`auth_${folderName}`)) {
+      //     window.location.href = "login.html";
+      //     return;
+      //   }
+
+      //   // Hiển thị nội dung nếu đã xác thực
+      //   document.getElementById("content").classList.add("visible");
+
+      //   // Hàm đăng xuất
+      //   window.logout = function () {
+      //     localStorage.removeItem(`auth_${folderName}`);
+      //     window.location.href = "../";
+      //   };
+      // })();
+      
+    </script>
+  </body>
+</html>
