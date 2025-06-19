@@ -1,0 +1,2 @@
+link quản lí : https://console.cloud.google.com/
+Clients : cung cấp link truy cập gg drive
